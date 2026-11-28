@@ -18,8 +18,10 @@ type Config struct {
 
 	RedisURL string
 
-	SupabaseURL string
-	SupabaseKey string
+	SupabaseURL         string
+	SupabaseKey         string
+	SupabaseURLFallback string
+	SupabaseKeyFallback string
 
 	GoogleClientID     string
 	GoogleClientSecret string
@@ -73,8 +75,10 @@ func Load() (*Config, error) {
 
 		RedisURL: v.GetString("REDIS_URL"),
 
-		SupabaseURL: v.GetString("SUPABASE_URL"),
-		SupabaseKey: v.GetString("SUPABASE_KEY"),
+		SupabaseURL:         v.GetString("SUPABASE_URL"),
+		SupabaseKey:         v.GetString("SUPABASE_KEY"),
+		SupabaseURLFallback: v.GetString("SUPABASE_URL_FALLBACK"),
+		SupabaseKeyFallback: v.GetString("SUPABASE_KEY_FALLBACK"),
 
 		GoogleClientID:     v.GetString("GOOGLE_CLIENT_ID"),
 		GoogleClientSecret: v.GetString("GOOGLE_CLIENT_SECRET"),

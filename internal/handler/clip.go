@@ -527,8 +527,9 @@ func (h *ClipHandler) GetDownloadURL(c *gin.Context) {
 		objectKey,
 	)
 
-	signedURL, err := h.supabase.SignedURL(
+	signedURL, err := h.supabase.SignedURLForSource(
 		c.Request.Context(),
+		clip.SupabaseShortURL,
 		downloadBucket,
 		objectKey,
 		3600,

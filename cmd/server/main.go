@@ -122,7 +122,12 @@ func main() {
 		mlClient = ml.NewMockService()
 	}
 
-	supabase := storage.NewSupabase(cfg.SupabaseURL, cfg.SupabaseKey)
+	supabase := storage.NewSupabaseWithFallback(
+		cfg.SupabaseURL,
+		cfg.SupabaseKey,
+		cfg.SupabaseURLFallback,
+		cfg.SupabaseKeyFallback,
+	)
 
 	jobRepo := repository.NewJobRepository(mongo)
 
