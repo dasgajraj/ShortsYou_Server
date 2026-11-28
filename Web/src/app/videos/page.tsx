@@ -460,7 +460,7 @@ export default function VideosPage() {
           {/* Main Video Section with Responsive Grid & AnimatePresence */}
           <VideoSection
             videos={filteredVideos}
-            onSelect={open}
+            onSelect={(v) => router.push(`/editor/${v.id}`)}
             onDelete={(v) => void removeVideo(v)}
             disabled={busy || syncing}
             empty={

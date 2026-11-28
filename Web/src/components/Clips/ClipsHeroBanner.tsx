@@ -23,9 +23,7 @@ export function ClipsHeroBanner({
   onPublishSelected,
 }: ClipsHeroBannerProps) {
   return (
-    <section
-      className="ca-clips-hero ca-glass"
-    >
+    <section className="ca-clips-hero ca-glass">
       <div className="ca-clips-hero-content">
         <div className="ca-clips-hero-text">
           <div className="ca-clips-eyebrow">
@@ -72,22 +70,22 @@ export function ClipsHeroBanner({
       </div>
 
       {notice && (
-          <div className="ca-notice-banner ca-glass">
-            <div className="ca-notice-content">
-              <Info size={16} className="ca-notice-icon" />
-              <span className="ca-notice-text">{notice}</span>
-            </div>
-            {onClearNotice && (
-              <button
-                type="button"
-                className="ca-notice-dismiss"
-                onClick={onClearNotice}
-                aria-label="Dismiss notice"
-              >
-                <X size={14} />
-              </button>
-            )}
+        <div className="ca-notice-banner ca-glass">
+          <div className="ca-notice-content">
+            <Info size={16} className="ca-notice-icon" />
+            <span className="ca-notice-text">{notice}</span>
           </div>
+          {onClearNotice && (
+            <button
+              type="button"
+              className="ca-notice-close"
+              onClick={onClearNotice}
+              aria-label="Dismiss notice"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
       )}
     </section>
   );

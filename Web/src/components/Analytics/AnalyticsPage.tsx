@@ -17,13 +17,7 @@ import {
 } from "@/lib/api";
 import { WorkspaceShell } from "@/components/Layout";
 import { notify } from "@/components/Notifications/NotificationCenter";
-import { AnalyticsHeroBanner } from "./AnalyticsHeroBanner";
-import { AnalyticsKpiGrid } from "./AnalyticsKpiGrid";
-import { RetentionCurvePanel } from "./RetentionCurvePanel";
-import { PlatformMatrixPanel } from "./PlatformMatrixPanel";
-import { TopClipsLeaderboard } from "./TopClipsLeaderboard";
-import { CreatorDNAPanel } from "./CreatorDNAPanel";
-import { AnalyticsInsightsGrid } from "./AnalyticsInsightsGrid";
+import { PowerBIDashboardsPanel } from "./PowerBIDashboardsPanel";
 
 function getScore(c: Clip): number {
   if (typeof c.viralScore === "number" && c.viralScore > 0) {
@@ -270,52 +264,7 @@ export function AnalyticsPage() {
       onSignOut={signOut}
     >
       <div className="flex flex-col gap-6 max-w-[1380px] mx-auto w-full pb-12">
-        {/* Top Hero Card with Range Selection & Real Export */}
-        <AnalyticsHeroBanner
-          range={range}
-          onRangeChange={handleRangeChange}
-          onExportReport={handleExportReport}
-          clipCount={filteredClips.length}
-          totalViews={totalViews}
-          avgHookScore={averageScore}
-        />
-
-        {/* 4 KPI Telemetry Cards */}
-        <AnalyticsKpiGrid
-          clips={filteredClips}
-          performance={performance}
-          totalViews={totalViews}
-          averageScore={averageScore}
-        />
-
-        {/* Bento Grid: Left Column Charts + Right Column Top Clips */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <div className="lg:col-span-8 flex flex-col gap-6 min-w-0">
-            <RetentionCurvePanel clips={filteredClips} />
-            <PlatformMatrixPanel performance={performance} clips={filteredClips} />
-          </div>
-
-          <div className="lg:col-span-4 flex flex-col gap-6 min-w-0">
-            <TopClipsLeaderboard clips={topClips} videos={videos} />
-          </div>
-        </div>
-
-        {/* Speech, Pacing & Content Architecture Knowledge Graph Panel */}
-        <CreatorDNAPanel
-          dna={dna}
-          clips={filteredClips}
-          busy={dnaBusy}
-          onGenerate={(sync) => void generateDNA(sync)}
-        />
-
-        {/* Actionable Growth Recommendations 3-Card Shelf */}
-        <AnalyticsInsightsGrid
-          clips={filteredClips}
-          contentGaps={contentGaps}
-          forecasts={forecasts}
-          personas={personas}
-          accuracy={accuracy}
-        />
+        <PowerBIDashboardsPanel />
       </div>
     </WorkspaceShell>
   );

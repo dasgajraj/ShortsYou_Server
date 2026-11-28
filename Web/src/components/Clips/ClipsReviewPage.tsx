@@ -442,9 +442,12 @@ export function ClipsReviewPage() {
           onResetFilters={resetFilters}
         />
 
-        {/* Main Clips Grid with Fluid Framer Motion Grid (Virtualizer removed for stability) */}
+        {/* Unikorns-style 4-Column Full-Bleed Shorts Grid */}
         {visible.length > 0 ? (
-          <motion.div className="ca-clips-grid" layout>
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5"
+            layout
+          >
             <AnimatePresence mode="popLayout">
               {visible.map((clip, index) => (
                 <ClipCard

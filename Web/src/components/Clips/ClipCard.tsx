@@ -2,18 +2,19 @@
 /* External creator and Supabase assets are intentionally rendered without Next's image proxy. */
 /* eslint-disable @next/next/no-img-element */
 
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowDownToLine,
   Check,
-  Eye,
   Loader2,
   Play,
   SlidersHorizontal,
+  Sparkles,
   Trash2,
   WandSparkles,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import type { Clip, Video } from "@/lib/api";
 import { formatDuration } from "@/lib/formatters";
 import { ImageGeneration, type ImageGenerationStatus } from "@/components/agents/image-generation";
@@ -41,268 +42,300 @@ export interface ClipCardProps {
   index: number;
 }
 
-export const ClipCard = memo(
-  function ClipCard({
-    clip,
-    video,
-    selected,
-    busy,
-    onSelect,
-    onExport,
-    onDownload,
-    onDelete,
-    onPreview,
-    index,
-  }: ClipCardProps) {
-    const image =
-      clip.selectedThumbnail || clip.thumbnailOptions?.[0] || video?.thumbnailUrl;
-    const title =
-      clip.originalHook ||
-      clip.selectedHook ||
-      clip.transcriptText ||
-      "High-saliency moment";
+export const ClipCard = memo(function ClipCard({
+  clip,
+  video,
+  selected,
+  busy,
+  onSelect,
+  onExport,
+  onDownload,
+  onDelete,
+  onPreview,
+  index,
+}: ClipCardProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const image =
+    clip.selectedThumbnail || clip.thumbnailOptions?.[0] || video?.thumbnailUrl;
+  const title =
+    clip.originalHook ||
+    clip.selectedHook ||
+    clip.transcriptText ||
+    "High-saliency moment";
 
-    const isRendered =
-      ["exported", "published"].includes(clip.status) || Boolean(clip.supabaseShortUrl);
-    const isRendering = ["editing", "queued", "processing"].includes(clip.status);
+  const isRendered =
+    ["exported", "published"].includes(clip.status) || Boolean(clip.supabaseShortUrl);
+  const isRendering = ["editing", "queued", "processing"].includes(clip.status);
 
-    const [renderProgress, setRenderProgress] = useState(2);
+  const [renderProgress, setRenderProgress] = useState(10);
+  const [hovered, setHovered] = useState(false);
 
-    useEffect(() => {
-      if (!isRendering) return;
-      const durationMs = Math.round((240 + Math.random() * 30) * 1000); // 4:00 - 4:30 min
-      const startedAt = clip.createdAt ? new Date(clip.createdAt).getTime() : Date.now();
-      const update = () => {
-        const elapsed = Math.max(0, Date.now() - startedAt);
-        const pct = Math.min(95, Math.max(2, Math.round((elapsed / durationMs) * 95)));
-        setRenderProgress(pct);
-      };
-      update();
-      const id = setInterval(update, 1000);
-      return () => clearInterval(id);
-    }, [isRendering, clip.createdAt]);
+  useEffect(() => {
+    if (!isRendering) return;
+    const durationMs = 255 * 1000;
+    const startedAt = clip.createdAt
+      ? new Date(clip.createdAt).getTime()
+      : Date.now();
+    const update = () => {
+      const elapsed = Math.max(0, Date.now() - startedAt);
+      const pct = Math.min(95, Math.max(4, Math.round((elapsed / durationMs) * 95)));
+      setRenderProgress(pct);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [isRendering, clip.createdAt]);
 
-    const stepIndex = Math.min(
-      RENDER_STEPS.length - 1,
-      Math.floor((renderProgress / 100) * RENDER_STEPS.length)
-    );
+  const stepIndex = Math.min(
+    RENDER_STEPS.length - 1,
+    Math.floor((renderProgress / 100) * RENDER_STEPS.length)
+  );
 
-    const genStatus: ImageGenerationStatus = !isRendering
-      ? "complete"
-      : renderProgress < 20
-      ? "queued"
-      : renderProgress < 75
-      ? "generating"
-      : "refining";
+  const genStatus: ImageGenerationStatus = !isRendering
+    ? "complete"
+    : renderProgress < 20
+    ? "queued"
+    : renderProgress < 75
+    ? "generating"
+    : "refining";
 
-    return (
-      <article
-        className={`ca-clip-card ca-glass ${selected ? "is-selected" : ""}`}
+  const score =
+    typeof clip.viralScore === "number"
+      ? clip.viralScore > 1
+        ? Math.round(clip.viralScore)
+        : Math.round(clip.viralScore * 100)
+      : 0;
+
+  const handleMouseEnter = () => {
+    setHovered(true);
+    if (videoRef.current) {
+      void videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: 0.22 }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={`group relative aspect-[9/15] w-full rounded-[22px] overflow-hidden bg-slate-950 border transition-all duration-300 shadow-sm hover:shadow-xl ${
+        selected
+          ? "border-indigo-500 ring-2 ring-indigo-500/40"
+          : "border-slate-200/80 hover:border-slate-300"
+      }`}
+    >
+      {/* Full-bleed Media / Blur Generation Animation */}
+      <div
+        onClick={() => onPreview && onPreview(clip)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onPreview?.(clip);
+          }
+        }}
+        className="absolute inset-0 cursor-pointer"
+        title={isRendered ? "Click to preview short" : "Click to view details"}
       >
-        {/* 9:14 Phone Video Poster */}
-        <div
-          className="ca-clip-media-box"
-          onClick={() => onPreview && onPreview(clip)}
-          role="button"
-          tabIndex={0}
-          title={isRendered ? "Click to preview short" : "Click to view details"}
-        >
-          {isRendering ? (
-            <div className="absolute inset-0 z-10">
-              <ImageGeneration
-                status={genStatus}
-                progress={renderProgress}
-                size="fluid"
-                aspectRatio="9 / 14"
-                resolution=""
-                interactive
-                showStatus={false}
-                className="size-full"
-                mediaClassName="size-full rounded-none border-0"
-              >
-                {image ? (
-                  <img src={image} alt="" className="size-full object-cover" loading="lazy" />
-                ) : (
-                  <div className={`ca-clip-art-fallback art-${index % 4}`}>
-                    <Play size={28} />
-                  </div>
-                )}
-              </ImageGeneration>
-            </div>
-          ) : image ? (
-            <img
-              src={image}
-              alt=""
-              className="ca-clip-poster-img"
-              loading="lazy"
-            />
-          ) : (
-            <div className={`ca-clip-art-fallback art-${index % 4}`}>
-              <Play size={28} />
-            </div>
-          )}
-
-          <div className="ca-clip-media-gradient" />
-
-          {/* Selection Checkbox */}
-          <label
-            className={`ca-clip-checkbox-label ${selected ? "checked" : ""}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <input
-              type="checkbox"
-              checked={selected}
-              onChange={onSelect}
-              className="ca-clip-checkbox-input"
-            />
-            <span className="ca-clip-checkbox-custom">
-              {selected && <Check size={11} strokeWidth={3} />}
-            </span>
-          </label>
-
-          {/* Viral Score Pill */}
-          {clip.viralScore > 0 && (
-            <span className="ca-clip-score-pill z-30">
-              {Math.round(clip.viralScore)}
-            </span>
-          )}
-
-          {/* Hover Play / Preview Overlay */}
-          {!isRendering && (
-            <div className="ca-clip-hover-overlay">
-              <div className="ca-clip-hover-play-btn">
-                {isRendered ? <Play size={20} fill="currentColor" /> : <Eye size={18} />}
-              </div>
-            </div>
-          )}
-
-          {/* Poster Caption Overlay */}
-          <div className="ca-clip-caption-overlay">
-            {title.slice(0, 90)}
-          </div>
-
-          {/* Waveform & Duration Bar */}
-          <div className="ca-clip-media-bottom">
-            <div className="ca-clip-wave-bars">
-              <span className="ca-wave-bar" />
-              <span className="ca-wave-bar" />
-              <span className="ca-wave-bar" />
-              <span className="ca-wave-bar" />
-            </div>
-            <span className="ca-clip-duration-tag">
-              {formatDuration(clip.durationSeconds)}
-            </span>
-          </div>
-        </div>
-
-        {/* Card Details */}
-        <div className="ca-clip-info-wrap">
-          <div className="ca-clip-source-row">
-            <span
-              className="ca-clip-video-name"
-              title={video?.title ?? "Processed source"}
+        {isRendering ? (
+          <div className="absolute inset-0 z-10">
+            <ImageGeneration
+              status={genStatus}
+              progress={renderProgress}
+              size="fluid"
+              aspectRatio="9 / 15"
+              resolution=""
+              interactive
+              showStatus={false}
+              className="size-full"
+              mediaClassName="size-full rounded-none border-0"
             >
-              {video?.title?.slice(0, 24) ?? "Processed source"}
-            </span>
-            <span className="ca-clip-category-pill">
-              {clip.category || "Viral"}
-            </span>
-          </div>
-
-          {/* Progress Bar Below Video & Above Details */}
-          {isRendering && (
-            <div className="pb-2.5">
-              <div className="flex items-center justify-between text-[11px] mb-1">
-                <span className="font-medium text-slate-700 dark:text-slate-200 truncate pr-2">
-                  {RENDER_STEPS[stepIndex]}
-                </span>
-                <span className="font-bold text-amber-500 shrink-0">
-                  {renderProgress}%
-                </span>
-              </div>
-              <div className="w-full h-1.5 rounded-full bg-slate-200/80 dark:bg-white/10 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 transition-all duration-700 ease-out"
-                  style={{ width: `${renderProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          <h3 className="ca-clip-headline-text" title={title}>
-            {title.slice(0, 100)}
-          </h3>
-
-          <p className="ca-clip-status-line">
-            <strong className={isRendered ? "text-emerald-500" : isRendering ? "text-amber-500" : ""}>
-              {isRendering ? "Rendering 4K…" : isRendered ? "Ready to Download" : clip.status}
-            </strong>
-            <span>·</span>
-            <span>{clip.semanticLabels?.slice(0, 2).join(" · ") || "AI-created"}</span>
-          </p>
-
-          {/* Target Platforms */}
-          <div className="ca-clip-platforms-row">
-            <span>Shorts</span>
-            <span>TikTok</span>
-            <span>Reels</span>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="ca-clip-action-buttons">
-            <button
-              type="button"
-              className={`ca-clip-btn primary ${isRendering ? "btn-rendering" : ""}`}
-              onClick={onExport}
-              disabled={busy || isRendering}
-            >
-              {busy || isRendering ? (
-                <Loader2 className="spin" size={13} />
+              {image ? (
+                <img src={image} alt="" className="size-full object-cover" loading="lazy" />
               ) : (
-                <WandSparkles size={13} />
+                <div className={`ca-clip-art-fallback art-${index % 4}`}>
+                  <Sparkles size={28} />
+                </div>
               )}
-              <span>
-                {isRendering
-                  ? "AI rendering…"
-                  : isRendered
-                  ? "Re-render"
-                  : "Create Short"}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className="ca-clip-btn download"
-              onClick={onDownload}
-              disabled={busy || !isRendered}
-              title={isRendered ? "Download vertical MP4" : "Render short before downloading"}
-            >
-              <ArrowDownToLine size={13} />
-              <span>Download</span>
-            </button>
-
-            <button
-              type="button"
-              className="ca-clip-delete-btn"
-              onClick={onDelete}
-              disabled={busy}
-              aria-label="Remove clip"
-              title="Remove clip"
-            >
-              <Trash2 size={14} />
-            </button>
+            </ImageGeneration>
           </div>
+        ) : clip.supabaseShortUrl ? (
+          <>
+            {image && !hovered && (
+              <img
+                src={image}
+                alt=""
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+            )}
+            <video
+              ref={videoRef}
+              src={clip.supabaseShortUrl}
+              poster={image}
+              muted
+              loop
+              playsInline
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                hovered || !image ? "opacity-100" : "opacity-0 absolute inset-0"
+              }`}
+            />
+          </>
+        ) : image ? (
+          <img
+            src={image}
+            alt=""
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className={`ca-clip-art-fallback art-${index % 4}`}>
+            <Play size={28} />
+          </div>
+        )}
+
+        {/* Top & Bottom Scrims */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/55 to-transparent z-20" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/95 via-black/55 to-transparent z-20" />
+      </div>
+
+      {/* Unikorns-style Top Row: Left Circular Badge/Checkbox + Right Frosted Pill */}
+      <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 pointer-events-none">
+        <label
+          onClick={(e) => e.stopPropagation()}
+          className={`pointer-events-auto h-8 w-8 rounded-full flex items-center justify-center border backdrop-blur-md cursor-pointer transition-all ${
+            selected
+              ? "bg-indigo-600 border-indigo-400 text-white shadow-md"
+              : "bg-black/45 border-white/25 text-white/90 hover:bg-black/65"
+          }`}
+          title={selected ? "Deselect short" : "Select short"}
+        >
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onSelect}
+            className="sr-only"
+          />
+          {selected ? <Check size={14} strokeWidth={3} /> : <Sparkles size={13} />}
+        </label>
+
+        <div className="pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-[11px] font-medium text-white tabular-nums">
+          <span>{formatDuration(clip.durationSeconds ?? 0)}</span>
+          {score > 0 && (
+            <>
+              <span className="text-white/40">·</span>
+              <span className="text-amber-300 font-semibold">{score}%</span>
+            </>
+          )}
         </div>
-      </article>
-    );
-  },
-  (prev, next) =>
-    prev.clip.id === next.clip.id &&
-    prev.clip.status === next.clip.status &&
-    prev.clip.viralScore === next.clip.viralScore &&
-    prev.clip.supabaseShortUrl === next.clip.supabaseShortUrl &&
-    prev.selected === next.selected &&
-    prev.busy === next.busy &&
-    prev.video?.id === next.video?.id &&
-    prev.video?.title === next.video?.title
-);
+      </div>
+
+      {/* Bottom Content & Actions */}
+      <div className="absolute inset-x-0 bottom-0 z-30 p-3.5 flex flex-col gap-2.5">
+        <div
+          onClick={() => onPreview && onPreview(clip)}
+          className="cursor-pointer flex flex-col gap-1"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] font-medium text-white/75">
+            <span className="truncate max-w-[140px]">
+              {video?.title ?? "Processed source"}
+            </span>
+            <span>·</span>
+            <span
+              className={
+                isRendered
+                  ? "text-emerald-300 font-semibold"
+                  : isRendering
+                  ? "text-amber-300 font-semibold"
+                  : "text-white/80"
+              }
+            >
+              {isRendering ? RENDER_STEPS[stepIndex] : isRendered ? "Ready" : clip.status}
+            </span>
+          </div>
+
+          <h3
+            className="text-[13px] font-semibold leading-snug text-white line-clamp-2"
+            title={title}
+          >
+            {title}
+          </h3>
+        </div>
+
+        {/* Tactile Frosted Glass Action Row (matching upper navbar) */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1.5 pt-0.5"
+        >
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={busy || isRendering}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-full text-[11px] font-semibold bg-[#b6c2d0] hover:bg-[#c3cedc] text-[#1a2032] border border-white/30 shadow-[inset_0_2px_4px_rgba(60,75,95,0.25),inset_0_-1.5px_2px_rgba(255,255,255,0.65),0_1px_1px_rgba(255,255,255,0.4)] disabled:opacity-55 transition-all cursor-pointer"
+          >
+            {busy || isRendering ? (
+              <Loader2 className="animate-spin" size={12} />
+            ) : (
+              <WandSparkles size={12} />
+            )}
+            <span>
+              {isRendering ? "Rendering…" : isRendered ? "Re-render" : "Create"}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onDownload}
+            disabled={busy || !isRendered}
+            title={isRendered ? "Download vertical MP4" : "Render short before downloading"}
+            className="ca-glass-circle-btn !w-8 !h-8 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <ArrowDownToLine size={13} />
+          </button>
+
+          <Link
+            href={`/editor/${clip.videoId}`}
+            title="Open in Studio Timeline Editor"
+            className="ca-glass-circle-btn !w-8 !h-8 shrink-0"
+          >
+            <SlidersHorizontal size={13} />
+          </Link>
+
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={busy}
+            aria-label="Delete clip"
+            title="Delete clip"
+            className="ca-glass-circle-btn !w-8 !h-8 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* Full-Width Progress Stroke Attached to Card Bottom */}
+      {isRendering && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 h-[3px] bg-white/15">
+          <div
+            className="h-full bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 transition-all duration-700 ease-out"
+            style={{ width: `${renderProgress}%` }}
+          />
+        </div>
+      )}
+    </motion.article>
+  );
+});
