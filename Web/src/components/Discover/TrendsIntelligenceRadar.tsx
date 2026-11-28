@@ -143,7 +143,11 @@ export function TrendsIntelligenceRadar({
           </div>
           <div className="ca-stat-info">
             <span className="ca-stat-label">Active Niche Clusters</span>
-            <span className="ca-stat-value">{genres.length} Genres</span>
+            {loading ? (
+              <span className="mt-1 block h-5 w-20 rounded-md bg-slate-200/80 animate-pulse" />
+            ) : (
+              <span className="ca-stat-value">{genres.length} Genres</span>
+            )}
           </div>
         </div>
 
@@ -153,9 +157,13 @@ export function TrendsIntelligenceRadar({
           </div>
           <div className="ca-stat-info">
             <span className="ca-stat-label">Predicted Trends</span>
-            <span className="ca-stat-value">
-              {data?.trends.length ?? 12} Trajectories
-            </span>
+            {loading ? (
+              <span className="mt-1 block h-5 w-24 rounded-md bg-slate-200/80 animate-pulse" />
+            ) : (
+              <span className="ca-stat-value">
+                {data?.trends.length ?? 12} Trajectories
+              </span>
+            )}
           </div>
         </div>
 
@@ -165,9 +173,13 @@ export function TrendsIntelligenceRadar({
           </div>
           <div className="ca-stat-info">
             <span className="ca-stat-label">Viral Video Ideas</span>
-            <span className="ca-stat-value">
-              {data?.videoIdeas.length ?? 6} Ready Hooks
-            </span>
+            {loading ? (
+              <span className="mt-1 block h-5 w-24 rounded-md bg-slate-200/80 animate-pulse" />
+            ) : (
+              <span className="ca-stat-value">
+                {data?.videoIdeas.length ?? 6} Ready Hooks
+              </span>
+            )}
           </div>
         </div>
 
@@ -233,7 +245,58 @@ export function TrendsIntelligenceRadar({
       {/* ── Active Content Showcase ── */}
       <div className="ca-trends-showcase-wrap">
         <AnimatePresence mode="wait">
-          {activeTab === "ideas" ? (
+          {loading ? (
+            <motion.div
+              key="trends-shimmer"
+              className="ca-video-ideas-grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              aria-label="Loading predicted trends and viral video blueprints"
+            >
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="ca-glass relative overflow-hidden rounded-2xl border border-slate-200/80 p-5 flex flex-col gap-4"
+                >
+                  {/* Diagonal Shimmer Sweep */}
+                  <motion.div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent"
+                    animate={{ x: ["-100%", "200%"] }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 1.5,
+                      ease: "linear",
+                      delay: idx * 0.1,
+                    }}
+                  />
+
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="h-5 w-20 rounded-full bg-slate-200/80 animate-pulse" />
+                    <div className="h-5 w-24 rounded-full bg-slate-200/70 animate-pulse" />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="h-5 w-4/5 rounded-lg bg-slate-200/85 animate-pulse" />
+                    <div className="h-4 w-3/5 rounded-lg bg-slate-200/65 animate-pulse" />
+                  </div>
+
+                  <div className="rounded-xl bg-slate-100/80 border border-slate-200/60 p-3.5 flex flex-col gap-2">
+                    <div className="h-3 w-24 rounded bg-slate-200/80 animate-pulse" />
+                    <div className="h-4 w-full rounded bg-slate-200/75 animate-pulse" />
+                    <div className="h-4 w-5/6 rounded bg-slate-200/65 animate-pulse" />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 mt-auto">
+                    <div className="h-9 flex-1 rounded-xl bg-slate-200/80 animate-pulse" />
+                    <div className="h-9 w-28 rounded-xl bg-slate-200/70 animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          ) : activeTab === "ideas" ? (
             /* ─────────────────────────────────────────────────────────────
                VIRAL VIDEO IDEAS (WITH HOOKS & 1-CLICK ACTIONS)
             ───────────────────────────────────────────────────────────── */

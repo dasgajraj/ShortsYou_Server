@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppNav } from "@/components/Navigation/AppNav";
 import { NotificationCenter } from "@/components/Notifications/NotificationCenter";
 import { CreatorPointer } from "@/components/Layout/CreatorPointer";
+import { SplashScreen } from "@/components/Layout/SplashScreen";
 import { AppProviders } from "@/components/Providers/AppProviders";
 
 const hanken = Hanken_Grotesk({
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <AppProviders>
+          <SplashScreen />
           <CreatorPointer />
           <AppNav />
           <NotificationCenter />

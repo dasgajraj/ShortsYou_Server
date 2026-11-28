@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Clapperboard } from "lucide-react";
@@ -10,14 +10,12 @@ import { notify } from "@/components/Notifications/NotificationCenter";
 import { WorkspaceShell } from "@/components/Layout";
 import { ClipsHeroBanner } from "./ClipsHeroBanner";
 import { ClipsMetricsOverview } from "./ClipsMetricsOverview";
-import { ClipsFilterBar } from "./ClipsFilterBar";
 import { ClipCard } from "./ClipCard";
 import { ClipPreviewModal } from "./ClipPreviewModal";
 import { Notch, type NotchItem } from "@/components/ui/notch";
 
 export function ClipsReviewPage() {
   const router = useRouter();
-  const [, startTransition] = useTransition();
 
   const [clips, setClips] = useState<Clip[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
@@ -152,38 +150,6 @@ export function ClipsReviewPage() {
     return map;
   }, [videos]);
 
-  // Pre-calculate tab counts
-  const counts = useMemo(() => {
-    let ready = 0;
-    let detected = 0;
-    let rendering = 0;
-    let viral = 0;
-    let narrative = 0;
-
-    for (const c of clips) {
-      const st = (c.status || "").toLowerCase();
-      if (st === "exported" || st === "published" || Boolean(c.supabaseShortUrl)) {
-        ready++;
-      } else if (st === "editing" || st === "queued" || st === "processing") {
-        rendering++;
-      } else if (st === "detected") {
-        detected++;
-      }
-
-      if (c.category === "viral") viral++;
-      else if (c.category === "narrative") narrative++;
-    }
-
-    return {
-      total: clips.length,
-      ready,
-      detected,
-      rendering,
-      viral,
-      narrative,
-    };
-  }, [clips]);
-
   // Filtered & Sorted clips
   const visible = useMemo(() => {
     let result = [...clips];
@@ -241,12 +207,6 @@ export function ClipsReviewPage() {
 
     return result;
   }, [clips, filter, selectedVideoId, searchQuery, sortBy, videoMap]);
-
-  const handleFilterChange = useCallback((newFilter: string) => {
-    startTransition(() => {
-      setFilter(newFilter);
-    });
-  }, []);
 
   const exportClip = useCallback(
     async (clipId: string) => {
@@ -359,12 +319,6 @@ export function ClipsReviewPage() {
     );
   }, []);
 
-  const toggleSelectAll = useCallback(() => {
-    setSelected((current) =>
-      current.length === visible.length ? [] : visible.map((clip) => clip.id)
-    );
-  }, [visible]);
-
   function resetFilters() {
     setFilter("all");
     setSearchQuery("");
@@ -424,23 +378,6 @@ export function ClipsReviewPage() {
 
         {/* 4 Performance Metric Cards */}
         <ClipsMetricsOverview clips={clips} videos={videos} />
-
-        {/* Filter Toolbar, Search, and Video Picker */}
-        <ClipsFilterBar
-          filter={filter}
-          onFilterChange={handleFilterChange}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedVideoId={selectedVideoId}
-          onVideoChange={setSelectedVideoId}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          videos={videos}
-          counts={counts}
-          allSelected={selected.length === visible.length && visible.length > 0}
-          onToggleSelectAll={toggleSelectAll}
-          onResetFilters={resetFilters}
-        />
 
         {/* Unikorns-style 4-Column Full-Bleed Shorts Grid */}
         {visible.length > 0 ? (
